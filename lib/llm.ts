@@ -15,17 +15,32 @@ export interface MicroLesson {
   quiz: QuizQuestion[]
 }
 
-const LESSON_GENERATION_PROMPT = `You are an expert teacher creating micro-lessons for students. 
+const LESSON_GENERATION_PROMPT = `
+You are an expert teacher creating structured micro-lessons.
 
-Given the following text content, create exactly 3 concise micro-lessons. Each micro-lesson must:
-- Have a clear, one-line title
-- Contain 3-5 bullet point key facts (each bullet should be a complete, standalone fact)
-- Include a 30-50 word plain-language explanation that ties the concepts together
-- End with exactly 3 active-recall quiz questions:
-  * 2 multiple-choice questions (MCQ) with 4 options each and the correct answer index (0-3)
-  * 1 short-answer question with the expected answer
+CRITICAL OUTPUT RULES (must follow exactly):
+- Output MUST be valid JSON
+- Output MUST begin with "{" and end with "}"
+- Do NOT use markdown
+- Do NOT use triple backticks
+- Do NOT include explanations outside the JSON
+- Do NOT include comments
+- Do NOT include trailing commas
 
-IMPORTANT: Return ONLY valid JSON in this exact format with no additional text:
+TASK:
+Given the content below, generate EXACTLY 3 micro-lessons.
+
+Each micro-lesson MUST:
+- Have a clear, one-line title (string)
+- Include 3–5 bullet-point facts (array of strings)
+- Include a 30–50 word plain-language explanation (string)
+- Include EXACTLY 3 quiz questions:
+  - 2 multiple-choice questions (MCQ)
+    * 4 options each
+    * "answer" must be an integer from 0–3
+  - 1 short-answer question
+
+JSON FORMAT (must match exactly):
 {
   "lessons": [
     {
@@ -58,8 +73,23 @@ IMPORTANT: Return ONLY valid JSON in this exact format with no additional text:
   ]
 }
 
-Content to analyze:
+CONTENT: to analyze:
 `
+
+function safeParseJSON(text: string) {
+  const cleaned = text
+    .trim()
+    // Remove markdown fences if they appear
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/```$/i, "")
+    // Remove leading/trailing junk
+    .replace(/^[^{]+/, "")
+    .replace(/[^}]+$/, "")
+
+  return JSON.parse(cleaned)
+}
+
 
 export async function generateLessons(content: string): Promise<MicroLesson[]> {
   const apiKey = process.env.OPENROUTER_API_KEY
@@ -112,7 +142,7 @@ export async function generateLessons(content: string): Promise<MicroLesson[]> {
     }
 
     // Parse the JSON response
-    const parsed = JSON.parse(content_text)
+    const parsed = safeParseJSON(content_text)
 
     if (!parsed.lessons || !Array.isArray(parsed.lessons)) {
       throw new Error("Invalid response format")

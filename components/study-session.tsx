@@ -15,17 +15,20 @@ interface StudySessionProps {
 }
 
 export default function StudySession({ initialCards }: StudySessionProps) {
-  const [cards, setCards] = useState<CardWithLesson[]>(initialCards)
+  const [cards] = useState<CardWithLesson[]>(initialCards)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [completedCards, setCompletedCards] = useState<string[]>([])
 
   const currentCard = cards[currentIndex]
-  const progress = cards.length > 0 ? ((currentIndex + completedCards.length) / cards.length) * 100 : 0
+  const totalCards = cards.length
+  const completedCount = completedCards.length
+  const progress = totalCards > 0 ? (completedCount / totalCards) * 100 : 0
 
   const handleCardComplete = (cardId: string) => {
-    setCompletedCards((prev) => [...prev, cardId])
+    const newCompletedCards = [...completedCards, cardId]
+    setCompletedCards(newCompletedCards)
 
-    // Move to next card
+    // Move to next card only if there are more cards
     if (currentIndex < cards.length - 1) {
       setCurrentIndex(currentIndex + 1)
     }
@@ -65,7 +68,8 @@ export default function StudySession({ initialCards }: StudySessionProps) {
     )
   }
 
-  if (currentIndex >= cards.length && completedCards.length === cards.length) {
+  // Check if session is complete
+  if (completedCount === totalCards) {
     return (
       <Card>
         <CardHeader className="text-center">
@@ -73,7 +77,7 @@ export default function StudySession({ initialCards }: StudySessionProps) {
             <CheckCircle2 className="h-16 w-16 text-green-500" />
           </div>
           <CardTitle>Session Complete!</CardTitle>
-          <CardDescription>You reviewed {completedCards.length} cards</CardDescription>
+          <CardDescription>You reviewed {completedCount} cards</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-4">
           <p className="text-sm text-muted-foreground text-center">Excellent work! Keep up the consistency.</p>
@@ -97,7 +101,7 @@ export default function StudySession({ initialCards }: StudySessionProps) {
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">Study Session</h1>
           <div className="text-sm text-muted-foreground">
-            Card {currentIndex + 1} of {cards.length}
+            {completedCount} / {totalCards} completed
           </div>
         </div>
         <Progress value={progress} className="h-2" />
