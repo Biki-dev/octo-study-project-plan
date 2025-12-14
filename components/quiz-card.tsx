@@ -25,12 +25,24 @@ export default function QuizCard({ card, onComplete, onSkip }: QuizCardProps) {
     let correct = false
 
     if (card.card_type === "mcq") {
-      const answerIndex = Number.parseInt(selectedAnswer)
-      correct = answerIndex === card.answer
+      const answerIndex = parseInt(selectedAnswer)
+      // Handle both string and number answer types
+      const correctAnswer = typeof card.answer === 'number' 
+        ? card.answer 
+        : parseInt(String(card.answer))
+      correct = answerIndex === correctAnswer
     } else {
-      // For short answer, we'll accept any non-empty answer
+      // For short answer, check if answer is not empty
       // In production, you might want more sophisticated checking
-      correct = shortAnswer.trim().length > 0
+      const userAnswer = shortAnswer.trim().toLowerCase()
+      const correctAnswer = String(card.answer).toLowerCase()
+      
+      // Basic similarity check - accept if contains key terms
+      correct = userAnswer.length > 0 && (
+        userAnswer === correctAnswer ||
+        userAnswer.includes(correctAnswer) ||
+        correctAnswer.includes(userAnswer)
+      )
     }
 
     setIsCorrect(correct)
@@ -38,7 +50,7 @@ export default function QuizCard({ card, onComplete, onSkip }: QuizCardProps) {
 
     // Submit review to API
     try {
-      await fetch("/api/review", {
+      const response = await fetch("/api/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -47,6 +59,11 @@ export default function QuizCard({ card, onComplete, onSkip }: QuizCardProps) {
           confidence: "medium",
         }),
       })
+
+      if (!response.ok) {
+        const error = await response.json()
+        console.error("Review submission failed:", error)
+      }
     } catch (error) {
       console.error("Error submitting review:", error)
     }
@@ -60,6 +77,11 @@ export default function QuizCard({ card, onComplete, onSkip }: QuizCardProps) {
   }
 
   const canSubmit = card.card_type === "mcq" ? selectedAnswer !== "" : shortAnswer.trim().length > 0
+
+  // Parse correct answer for display
+  const correctAnswerIndex = card.card_type === "mcq"
+    ? (typeof card.answer === 'number' ? card.answer : parseInt(String(card.answer)))
+    : null
 
   return (
     <Card>
@@ -81,13 +103,17 @@ export default function QuizCard({ card, onComplete, onSkip }: QuizCardProps) {
                   <Label
                     htmlFor={`option-${index}`}
                     className={`flex-1 cursor-pointer ${
-                      showFeedback && index === card.answer ? "font-medium text-green-600 dark:text-green-400" : ""
+                      showFeedback && index === correctAnswerIndex 
+                        ? "font-medium text-green-600 dark:text-green-400" 
+                        : ""
                     }`}
                   >
                     {choice}
                   </Label>
-                  {showFeedback && index === card.answer && <CheckCircle2 className="h-5 w-5 text-green-500" />}
-                  {showFeedback && Number.parseInt(selectedAnswer) === index && index !== card.answer && (
+                  {showFeedback && index === correctAnswerIndex && (
+                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                  )}
+                  {showFeedback && parseInt(selectedAnswer) === index && index !== correctAnswerIndex && (
                     <XCircle className="h-5 w-5 text-red-500" />
                   )}
                 </div>
