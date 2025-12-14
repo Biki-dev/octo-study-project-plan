@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Brain, Calendar, Target, TrendingUp, Flame, Award, Zap, Clock } from "lucide-react"
-import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts"
 
 interface ProgressData {
   totalCards: number
@@ -202,22 +202,7 @@ export default function ProgressDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="glass-effect hover:scale-[1.02] transition-all duration-300">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="p-4 bg-accent/10 rounded-2xl">
-                <Clock className="h-8 w-8 text-accent" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Avg. Session</p>
-                <h3 className="text-3xl font-bold">~15m</h3>
-              </div>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Perfect for focused learning
-            </p>
-          </CardContent>
-        </Card>
+
       </div>
 
       {/* Activity Chart - Premium Design */}
